@@ -101,7 +101,7 @@ export default function VidApiPlayer({
   const [youtubeResult, setYoutubeResult] = useState<YouTubeResult | null>(null);
   const [youtubeSearchDone, setYoutubeSearchDone] = useState(false);
   const [playbackStarted, setPlaybackStarted] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(15);
+  const [secondsLeft, setSecondsLeft] = useState(5);
   const ar = lang === "ar";
   const youtubeCountry = originCountry.find((country) => country === "TR" || country === "LB") || "";
   const useYoutubeFallback = type === "tv" && Boolean(youtubeCountry);
@@ -121,28 +121,14 @@ export default function VidApiPlayer({
   }, [title, originalTitle, youtubeCountry, useYoutubeFallback, season, episode]);
 
   const providers = useMemo<Provider[]>(() => {
-    const tmdbId = id;
     const primaryId = imdbId || id;
     const path = type === "movie"
       ? `/embed/movie/${encodeURIComponent(primaryId)}`
       : `/embed/tv/${encodeURIComponent(primaryId)}/${season}/${episode}`;
     const vidApiUrl = `https://vaplayer.ru${path}?primaryColor=%23e50914&lang=${lang}`;
-    const vidukiTemplate = type === "movie"
-      ? process.env.NEXT_PUBLIC_VIDUKI_MOVIE_URL_TEMPLATE
-      : process.env.NEXT_PUBLIC_VIDUKI_TV_URL_TEMPLATE;
-    const vidukiUrl = vidukiTemplate
-      ? fillTemplate(vidukiTemplate, { id: tmdbId, season, episode })
-      : "";
-    const ezvidUrl = type === "movie"
-      ? `https://ezvidapi.com/embed/movie/${encodeURIComponent(tmdbId)}`
-      : `https://ezvidapi.com/embed/tv/${encodeURIComponent(tmdbId)}/${season}/${episode}`;
-    const vidapiRuUrl = `https://vidapi.ru${path}?primaryColor=%23e50914&lang=${lang}`;
     return [
       { name: "VidAPI", url: vidApiUrl },
       ...(useYoutubeFallback && youtubeResult ? [{ name: "YouTube", url: `https://www.youtube.com/embed/${youtubeResult.videoId}`, kind: "youtube" as const, videoId: youtubeResult.videoId }] : []),
-      ...(vidukiUrl ? [{ name: "Viduki", url: vidukiUrl }] : []),
-      { name: "ezvidapi", url: ezvidUrl },
-      { name: "vidapi.ru", url: vidapiRuUrl },
     ];
   }, [type, id, imdbId, season, episode, lang, useYoutubeFallback, youtubeResult]);
 
@@ -154,7 +140,7 @@ export default function VidApiPlayer({
 
   const next = useCallback(() => {
     setPlaybackStarted(false);
-    setSecondsLeft(15);
+    setSecondsLeft(5);
     setProviderIndex((index) => Math.min(index + 1, providers.length));
   }, [providers.length]);
 
@@ -164,16 +150,15 @@ export default function VidApiPlayer({
     else setFailed(false);
   }, [providerIndex, providers.length]);
 
-  // YouTube playback start is detected through its official IFrame API. Other
-  // third-party iframes are cross-origin and may not expose a playback signal;
-  // their 15-second watchdog is therefore best-effort, not proof of failure.
+  // VidAPI has an intentional startup countdown. Its cross-origin iframe does
+  // not expose a reliable playback event, so never auto-advance away from it.
+  // YouTube playback is observable through the official IFrame Player API.
   useEffect(() => {
-    if (!active || playbackStarted) return;
-    if (active.name === "VidAPI" && useYoutubeFallback && !youtubeSearchDone) return;
-    setSecondsLeft(15);
+    if (!active || playbackStarted || active.name === "VidAPI") return;
+    setSecondsLeft(5);
     const startedAt = Date.now();
     const tick = window.setInterval(() => {
-      const remaining = Math.max(0, 15 - Math.floor((Date.now() - startedAt) / 1000));
+      const remaining = Math.max(0, 5 - Math.floor((Date.now() - startedAt) / 1000));
       setSecondsLeft(remaining);
       if (remaining <= 0) {
         window.clearInterval(tick);
@@ -181,17 +166,7 @@ export default function VidApiPlayer({
       }
     }, 250);
     return () => window.clearInterval(tick);
-  }, [active?.name, active?.url, playbackStarted, next, useYoutubeFallback, youtubeSearchDone]);
-
-  // Viduki exposes a specific message when all of its internal servers fail.
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== "https://www.viduki.net") return;
-      if (event.data?.type === "viduki:all-servers-failed") next();
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [next]);
+  }, [active?.name, active?.url, playbackStarted, next]);
 
   const markStarted = useCallback(() => setPlaybackStarted(true), []);
 
@@ -223,7 +198,7 @@ export default function VidApiPlayer({
       <div className="player-provider-bar">
         <span>
           {ar ? "المصدر الحالي:" : "Current source:"} <strong>{active?.name ?? (ar ? "غير متاح" : "Unavailable")}</strong>
-          {active && !playbackStarted && <small className="player-countdown"> · {ar ? `التبديل التلقائي خلال ${secondsLeft} ثانية` : `Auto-switch in ${secondsLeft}s if playback is not detected`}</small>}
+          {active && active.name !== "VidAPI" && !playbackStarted && <small className="player-countdown"> · {ar ? `التبديل التلقائي خلال ${secondsLeft} ثانية` : `Auto-switch in ${secondsLeft}s if playback is not detected`}</small>}
         </span>
         <button type="button" onClick={next} disabled={failed}>
           {ar ? "جرّب المصدر التالي" : "Try next source"}
@@ -253,8 +228,8 @@ export default function VidApiPlayer({
 
       <p className="player-caption">
         {ar
-          ? "يتم تجربة المصادر بالترتيب. يتم إيقاف التبديل التلقائي عند اكتشاف بدء التشغيل. قد لا تتمكن JAIFLIX من اكتشاف حالة التشغيل داخل بعض المشغلات الخارجية."
-          : "Sources are tried in order. Auto-switching stops when playback is detected. Some external players do not expose playback status to JAIFLIX, so the 15-second fallback timer is best-effort for those providers."}
+          ? "يتم تجربة المصادر بالترتيب. يتم إيقاف التبديل التلقائي عند اكتشاف بدء التشغيل. لا يتم تخطي VidAPI تلقائياً لأن لديه عدّاً تنازلياً عند بدء التشغيل؛ استخدم زر المصدر التالي إذا تعطل فعلاً."
+          : "Sources are tried in order. Auto-switching stops when playback is detected. VidAPI is intentionally not auto-skipped because its startup countdown can take longer; use Try next source if it genuinely fails. YouTube is auto-skipped after 5 seconds if playback is not detected."}
       </p>
       {useYoutubeFallback && !youtubeSearchDone && <p className="player-caption">{ar ? "جارٍ البحث عن الحلقة على YouTube…" : "Searching YouTube for this episode…"}</p>}
       {useYoutubeFallback && youtubeSearchDone && !youtubeResult && <p className="player-caption">{ar ? "لم يتم العثور على نتيجة YouTube قابلة للتضمين؛ سيتم تخطي هذا المصدر." : "No embeddable YouTube result was found; this fallback will be skipped."}</p>}
