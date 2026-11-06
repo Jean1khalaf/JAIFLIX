@@ -2,8 +2,8 @@
 import {useMemo,useState} from 'react';
 
 type Season={season_number:number;episode_count:number;name:string};
-export default function VidApiPlayer({type,id,seasons=[],lang='en'}:{
-  type:'movie'|'tv';id:string;seasons?:Season[];lang?:'en'|'ar'
+export default function VidApiPlayer({type,id,imdbId,seasons=[],lang='en'}:{
+  type:'movie'|'tv';id:string;imdbId?:string;seasons?:Season[];lang?:'en'|'ar'
 }) {
   const available=seasons.filter(s=>s.season_number>0 && s.episode_count>0);
   const [season,setSeason]=useState(available[0]?.season_number ?? 1);
@@ -11,9 +11,10 @@ export default function VidApiPlayer({type,id,seasons=[],lang='en'}:{
   const [episode,setEpisode]=useState(1);
   const src=useMemo(()=>{
     const base='https://vaplayer.ru/embed';
-    return type==='movie' ? `${base}/movie/${encodeURIComponent(id)}?primaryColor=%23e50914&lang=${lang}` :
-      `${base}/tv/${encodeURIComponent(id)}/${season}/${episode}?primaryColor=%23e50914&lang=${lang}`;
-  },[type,id,season,episode,lang]);
+    const providerId=imdbId || id;
+    return type==='movie' ? `${base}/movie/${encodeURIComponent(providerId)}?primaryColor=%23e50914&lang=${lang}` :
+      `${base}/tv/${encodeURIComponent(providerId)}/${season}/${episode}?primaryColor=%23e50914&lang=${lang}`;
+  },[type,id,imdbId,season,episode,lang]);
   const ar=lang==='ar';
   return <section className="vidapi-player" dir={ar?'rtl':'ltr'}>
     {type==='tv' && <div className="episode-controls">
@@ -33,6 +34,6 @@ export default function VidApiPlayer({type,id,seasons=[],lang='en'}:{
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
         allowFullScreen referrerPolicy="strict-origin-when-cross-origin"/>
     </div>
-    <p className="player-caption">{ar?'يتم تشغيل الفيديو عبر مشغل VidAPI الخارجي. قد يختلف توفر العناوين والحلقات.':'Video is served by the external VidAPI player. Title and episode availability may vary.'}</p>
+    <p className="player-caption">{ar?'يتم التشغيل عبر VidAPI. إذا ظهر خطأ 404 فقد لا يكون العنوان أو الحلقة متاحاً في مكتبته.':'Playback is provided by VidAPI. If its player reports 404, that title or episode may not be in its catalogue.'}</p>
   </section>;
 }

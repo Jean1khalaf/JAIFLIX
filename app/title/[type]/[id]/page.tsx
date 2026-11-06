@@ -19,7 +19,7 @@ export default async function Title({params}:{params:Promise<{type:string,id:str
    <div className="meta"><span><Star size={15} fill="currentColor"/> {d.rating.toFixed(1)}</span><span>{d.runtime?`${d.runtime} ${lang==='ar'?'دقيقة':'min'}`:d.seasons?`${d.seasons} ${lang==='ar'?'مواسم':'seasons'}`:'New'}</span><span>{d.genres.join(' · ')}</span></div>
    <p>{d.overview}</p>
    <div className="actions"><Trailer videoKey={d.videos?.[0]?.key} lang={lang}/></div>
-   <VidApiPlayer type={type} id={id} seasons={d.seasonList||[]} lang={lang}/>
+   <VidApiPlayer type={type} id={id} imdbId={d.imdbId||undefined} seasons={d.seasonList||[]} lang={lang}/>
    {d.cast?.length>0&&<div className="cast"><h2>{t.topCast}</h2><div>{d.cast.map((c:any)=><span key={c.id}><b>{c.name}</b><small>{c.character}</small></span>)}</div></div>}
   </div>
  </section>;
