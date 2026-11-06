@@ -37,3 +37,16 @@ This product uses the TMDB API but is not endorsed or certified by TMDB. Add the
 - Add a privacy policy, cookie notice where applicable, terms of service, copyright/takedown contact, and age controls.
 - Add rate limiting and error monitoring (for example, Vercel Firewall and Sentry).
 - Confirm licenses for posters, metadata, trailers, and all streamed video.
+
+
+## Fix the TMDB message
+1. Create/sign in to a TMDB account and open **Settings → API**.
+2. Copy the **API Read Access Token** (the long Bearer token).
+3. In the project root, copy `.env.example` to `.env.local`.
+4. Replace `your_tmdb_read_access_token` with that token, without quotes.
+5. Restart the dev server (`npm run dev`) or redeploy after adding `TMDB_BEARER_TOKEN` in Vercel Environment Variables.
+
+The home page now includes separate Turkish-original-language and Arabic-original-language series feeds. It also keeps the other feeds visible if one TMDB request fails.
+
+## Fix the playback message
+This is not a TMDB error. Playback is intentionally unavailable until you configure a video endpoint from a provider that has licensed rights to stream the titles in your target regions. Set `VIDEO_API_URL_TEMPLATE` to that provider's documented embed URL, using `{type}` and `{id}` placeholders (and `{season}` / `{episode}` for providers that support episodes). Do not use an arbitrary third-party stream URL. If you do not have a licensed provider, leave playback disabled; discovery, search, details, and official YouTube trailers can still work.
