@@ -1,0 +1,3 @@
+import type {Metadata} from 'next';import './globals.css';import Header from '@/components/Header';
+export const metadata:Metadata={title:{default:'JAIFLIX',template:'%s | JAIFLIX'},description:'Discover movies and series with JAIFLIX.'};
+export default function Layout({children}:{children:React.ReactNode}){return <html lang="en"><body><Header/><main>{children}</main><footer><b>JAIFLIX</b><p>Movie and TV discovery. Playback requires rights from a licensed provider.</p><small>Metadata by TMDB and TVmaze. This product uses the TMDB API but is not endorsed or certified by TMDB.</small></footer></body></html>}

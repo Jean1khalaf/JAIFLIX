@@ -1,0 +1,2 @@
+import Row from '@/components/Row';import {discover} from '@/lib/tmdb';import {notFound} from 'next/navigation';
+export default async function Browse({params}:{params:Promise<{type:string}>}){const {type}=await params;if(type!=='movie'&&type!=='tv')notFound();const items=await discover(type);return <div className="page"><span className="eyebrow">EXPLORE</span><h1>{type==='movie'?'Movies':'Series'}</h1><Row title="Popular now" items={items}/></div>}

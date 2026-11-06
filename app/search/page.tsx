@@ -1,0 +1,2 @@
+import Row from '@/components/Row';import {search} from '@/lib/tmdb';
+export default async function Search({searchParams}:{searchParams:Promise<{q?:string}>}){const {q=''}=await searchParams;const items=q?await search(q):[];return <div className="page"><span className="eyebrow">SEARCH</span><h1>{q?`Results for “${q}”`:'Find your next favorite'}</h1>{items.length?<Row title="Movies and series" items={items}/>:<p className="muted">{q?'No results found. Try another title.':'Use the search box above.'}</p>}</div>}
