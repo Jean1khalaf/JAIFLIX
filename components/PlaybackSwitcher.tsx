@@ -43,8 +43,15 @@ export default function PlaybackSwitcher({
     try {
       const query = new URLSearchParams({ title, titleAr, type, season: String(targetSeason), episode: String(targetEpisode), lang });
       const response = await fetch(`/api/youtube?${query.toString()}`);
-      const data = await response.json() as { items?: Video[] };
-      if (!response.ok) throw new Error(ar ? "مصدر YouTube غير متاح حالياً. حاول مرة أخرى لاحقاً." : "The YouTube source is temporarily unavailable. Please try again later.");
+      const data = await response.json() as { items?: Video[]; error?: string };
+      if (!response.ok) {
+        const safeMessage = data.error || (ar
+          ? "مصدر YouTube غير متاح حالياً. حاول مرة أخرى لاحقاً."
+          : "The YouTube source is temporarily unavailable. Please try again later.");
+        throw new Error(ar
+          ? "تعذّر تشغيل المصدر الاحتياطي. تحقق من إعدادات YouTube API في الخادم ثم حاول مجدداً."
+          : safeMessage);
+      }
       const best = data.items?.[0];
       if (!best) setError(ar ? "لم نعثر على نسخة قابلة للتضمين من هذه الحلقة. قد يكون التضمين معطلاً من صاحب القناة." : "We couldn't find an embeddable copy of this episode. The channel may have disabled embedding.");
       else setSelected(best);

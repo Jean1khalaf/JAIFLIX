@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 type SearchItem = {
   id?: { videoId?: string };
   snippet?: {
@@ -7,39 +9,69 @@ type SearchItem = {
     description?: string;
     channelTitle?: string;
     channelId?: string;
-    thumbnails?: { medium?: { url?: string }; high?: { url?: string }; default?: { url?: string } };
+    thumbnails?: {
+      medium?: { url?: string };
+      high?: { url?: string };
+      default?: { url?: string };
+    };
     publishedAt?: string;
   };
 };
-type VideoDetails = { id?: string; status?: { embeddable?: boolean; privacyStatus?: string } };
-const jsonError = (message: string, status: number) => NextResponse.json({ error: message }, { status });
+
+type GoogleApiError = {
+  error?: {
+    code?: number;
+    message?: string;
+    errors?: Array<{ reason?: string; message?: string }>;
+  };
+};
+
+const safeError = (message: string, status: number, code: string) =>
+  NextResponse.json({ error: message, code }, { status });
 
 function normalize(value: string) {
-  return value.toLocaleLowerCase().normalize("NFKC").replace(/[ً-ْـ]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  return value
+    .toLocaleLowerCase()
+    .normalize("NFKC")
+    .replace(/[ً-ْـ]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 }
-function episodeMatch(text: string, season: number, episode: number) {
-  const value = normalize(text);
-  const e = String(episode).padStart(2, "0");
-  const s = String(season).padStart(2, "0");
-  const patterns = [
-    new RegExp(`\\b(?:s\\s*0?${season})\\s*e\\s*0?${episode}\\b`, "i"),
-    new RegExp(`\\b(?:episode|ep)\\s*0?${episode}\\b`, "i"),
-    new RegExp(`الحلقة\\s*0?${episode}(?:\\s|$)`, "i"),
-    new RegExp(`(?:الموسم|season)\\s*0?${season}.*(?:الحلقة|episode)\\s*0?${episode}`, "i"),
-  ];
-  return patterns.some((pattern) => pattern.test(value)) || value.includes(`s${s}e${e}`);
-}
-function relevance(item: SearchItem, titles: string[], type: string, season: number, episode: number) {
+
+function scoreResult(
+  item: SearchItem,
+  titles: string[],
+  type: "movie" | "series",
+  season: number,
+  episode: number,
+) {
   const text = normalize(`${item.snippet?.title || ""} ${item.snippet?.description || ""}`);
-  const titleScore = titles.reduce((best, title) => {
-    const normalized = normalize(title);
-    if (!normalized) return best;
-    const words = normalized.split(" ").filter((word) => word.length > 1);
+  let score = 0;
+  for (const candidate of titles) {
+    const words = normalize(candidate).split(" ").filter((word) => word.length > 1);
+    if (!words.length) continue;
     const matched = words.filter((word) => text.includes(word)).length;
-    return Math.max(best, matched / Math.max(words.length, 1));
-  }, 0);
-  const episodeScore = type === "series" && episodeMatch(text, season, episode) ? 100 : 0;
-  return episodeScore + titleScore * 20;
+    score = Math.max(score, (matched / words.length) * 20);
+  }
+
+  if (type === "series") {
+    const ep = String(episode).padStart(2, "0");
+    const se = String(season).padStart(2, "0");
+    const patterns = [
+      new RegExp(`\\b(?:s\\s*0?${season})\\s*e\\s*0?${episode}\\b`, "i"),
+      new RegExp(`\\b(?:episode|ep)\\s*0?${episode}\\b`, "i"),
+      new RegExp(`الحلقة\\s*0?${episode}`, "i"),
+      new RegExp(`(?:الموسم|season)\\s*0?${season}.*(?:الحلقة|episode)\\s*0?${episode}`, "i"),
+    ];
+    if (patterns.some((pattern) => pattern.test(text)) || text.includes(`s${se}e${ep}`)) {
+      score += 100;
+    }
+  }
+  return score;
+}
+
+function getGoogleErrorReason(data: GoogleApiError) {
+  return data.error?.errors?.[0]?.reason || "unknown";
 }
 
 export async function GET(request: NextRequest) {
@@ -50,79 +82,107 @@ export async function GET(request: NextRequest) {
   const season = Math.max(1, Number(params.get("season")) || 1);
   const episode = Math.max(1, Number(params.get("episode")) || 1);
   const apiKey = process.env.YOUTUBE_API_KEY?.trim();
-  if (!apiKey) return jsonError("The alternative source is temporarily unavailable.", 503);
-  if (!titleEn && !titleAr) return jsonError("A title is required to search YouTube.", 400);
 
-  const se = `S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}`;
-  // Search both original and localized titles regardless of the current UI language.
-  // This fixes English mode missing Arabic-only Lebanese/Syrian uploads.
+  if (!apiKey) {
+    console.error("[YouTube fallback] Missing YOUTUBE_API_KEY environment variable.");
+    return safeError("YouTube fallback is not configured yet.", 503, "YOUTUBE_NOT_CONFIGURED");
+  }
+  if (!titleEn && !titleAr) {
+    return safeError("A title is required to search YouTube.", 400, "TITLE_REQUIRED");
+  }
+
+  // Search Arabic uploads first for Arabic productions, regardless of the UI language.
+  // A maximum of two search.list calls avoids burning the daily YouTube quota.
+  const episodeText = `الحلقة ${episode}`;
+  const seasonEpisode = `S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}`;
   const queries = type === "series"
     ? [
-        titleAr && `${titleAr} الحلقة ${episode}`,
-        titleEn && `${titleEn} episode ${episode}`,
-        titleEn && `${titleEn} ${se}`,
-        titleAr && `${titleAr} ${se}`,
-        titleAr,
-        titleEn,
+        titleAr ? `${titleAr} ${episodeText}` : `${titleEn} episode ${episode}`,
+        titleEn ? `${titleEn} ${seasonEpisode}` : "",
       ]
     : [
-        titleAr && `${titleAr} فيلم كامل`,
-        titleEn && `${titleEn} full movie`,
-        titleAr,
-        titleEn,
+        titleAr ? `${titleAr} فيلم كامل` : `${titleEn} full movie`,
+        titleEn || titleAr,
       ];
-  const uniqueQueries = [...new Set(queries.filter((q): q is string => Boolean(q?.trim())))];
+
   const base = "https://www.googleapis.com/youtube/v3";
   const allItems = new Map<string, SearchItem>();
+  let lastReason = "unknown";
 
   try {
-    for (const q of uniqueQueries) {
+    for (const rawQuery of [...new Set(queries.map((q) => q.trim()).filter(Boolean))].slice(0, 2)) {
       const url = new URL(`${base}/search`);
       url.search = new URLSearchParams({
-        part: "snippet", q: q.slice(0, 160), type: "video", maxResults: "10",
-        order: "relevance", safeSearch: "moderate", key: apiKey,
+        part: "snippet",
+        q: rawQuery.slice(0, 160),
+        type: "video",
+        maxResults: "15",
+        order: "relevance",
+        safeSearch: "moderate",
+        videoEmbeddable: "true",
+        key: apiKey,
       }).toString();
+
       const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) return jsonError("YouTube fallback is temporarily unavailable. Please try again later.", response.status === 403 ? 503 : 502);
-      const data = await response.json() as { items?: SearchItem[] };
-      for (const item of data.items || []) {
-        const id = item.id?.videoId;
-        if (id && item.snippet) allItems.set(id, item);
+      const data = await response.json() as { items?: SearchItem[] } & GoogleApiError;
+
+      if (!response.ok) {
+        lastReason = getGoogleErrorReason(data);
+        console.error("[YouTube fallback] Google API request failed:", {
+          status: response.status,
+          reason: lastReason,
+          message: data.error?.message,
+        });
+
+        if (lastReason === "quotaExceeded" || lastReason === "dailyLimitExceeded" || lastReason === "rateLimitExceeded") {
+          return safeError("YouTube's daily API quota has been reached. Please try again later.", 503, "YOUTUBE_QUOTA_EXCEEDED");
+        }
+        if (lastReason === "keyInvalid" || lastReason === "ipRefererBlocked" || lastReason === "accessNotConfigured") {
+          return safeError("YouTube API configuration needs attention. Check the API key restrictions and enable YouTube Data API v3.", 503, "YOUTUBE_API_CONFIGURATION");
+        }
+        return safeError("YouTube could not complete the search. Please try again later.", 502, "YOUTUBE_API_ERROR");
       }
+
+      for (const item of data.items || []) {
+        const videoId = item.id?.videoId;
+        if (videoId && item.snippet) allItems.set(videoId, item);
+      }
+      // If the first targeted search returned videos, don't spend quota on another search.
+      if (allItems.size > 0) break;
     }
 
-    const candidates = [...allItems.entries()]
-      .sort((a, b) => relevance(b[1], [titleAr, titleEn], type, season, episode) - relevance(a[1], [titleAr, titleEn], type, season, episode))
-      .slice(0, 50);
-    if (!candidates.length) return NextResponse.json({ items: [] });
+    if (!allItems.size) return NextResponse.json({ items: [] });
 
-    const detailsUrl = new URL(`${base}/videos`);
-    detailsUrl.search = new URLSearchParams({ part: "status", id: candidates.map(([id]) => id).join(","), key: apiKey }).toString();
-    const detailsResponse = await fetch(detailsUrl, { cache: "no-store" });
-    if (!detailsResponse.ok) return jsonError("YouTube fallback is temporarily unavailable. Please try again later.", detailsResponse.status === 403 ? 503 : 502);
-    const detailsData = await detailsResponse.json() as { items?: VideoDetails[] };
-    const embeddable = new Set((detailsData.items || [])
-      .filter((v) => v.status?.embeddable === true && v.status?.privacyStatus === "public")
-      .map((v) => v.id).filter((id): id is string => Boolean(id)));
-    const allowedChannels = (process.env.YOUTUBE_ALLOWED_CHANNEL_IDS || "").split(",").map((id) => id.trim()).filter(Boolean);
+    const candidates = [...allItems.values()]
+      .sort((a, b) =>
+        scoreResult(b, [titleAr, titleEn], type, season, episode) -
+        scoreResult(a, [titleAr, titleEn], type, season, episode),
+      );
 
-    // Return the best matching embeddable result only: the player opens the
-    // requested episode directly instead of presenting a separate result catalogue.
-    const best = candidates.find(([videoId, item]) => embeddable.has(videoId) &&
-      (!allowedChannels.length || allowedChannels.includes(item.snippet?.channelId || "")));
-    if (!best) return NextResponse.json({ items: [] });
-    const [videoId, item] = best;
-    const snippet = item.snippet!;
-    return NextResponse.json({ items: [{
-      videoId,
-      title: snippet.title || "YouTube video",
-      description: snippet.description || "",
-      channelTitle: snippet.channelTitle || "YouTube channel",
-      channelId: snippet.channelId || "",
-      thumbnail: snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-      publishedAt: snippet.publishedAt || "",
-    }] });
-  } catch {
-    return jsonError("Could not contact YouTube. Please try again.", 502);
+    // videoEmbeddable=true is a supported search.list filter. Search results are public
+    // videos; this avoids a second videos.list call and its extra quota cost.
+    const best = candidates[0];
+    const videoId = best.id?.videoId;
+    if (!videoId) return NextResponse.json({ items: [] });
+
+    const snippet = best.snippet || {};
+    return NextResponse.json({
+      items: [{
+        videoId,
+        title: snippet.title || "YouTube video",
+        description: snippet.description || "",
+        channelTitle: snippet.channelTitle || "YouTube channel",
+        channelId: snippet.channelId || "",
+        thumbnail:
+          snippet.thumbnails?.high?.url ||
+          snippet.thumbnails?.medium?.url ||
+          snippet.thumbnails?.default?.url ||
+          `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        publishedAt: snippet.publishedAt || "",
+      }],
+    });
+  } catch (error) {
+    console.error("[YouTube fallback] Unexpected error:", error);
+    return safeError("Could not contact YouTube. Please try again.", 502, "YOUTUBE_NETWORK_ERROR");
   }
 }
