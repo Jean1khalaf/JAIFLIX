@@ -18,12 +18,12 @@ Never commit `.env.local` or expose `YOUTUBE_API_KEY` through a `NEXT_PUBLIC_` v
 
 1. TMDB continues to provide titles, posters, descriptions, seasons and episode metadata.
 2. VidAPI remains the default player and is loaded first.
-3. The watch page offers a **YouTube · Backup** control and a **Try YouTube instead** action. If VidAPI shows a 404, the viewer can switch to YouTube without leaving JAIFLIX.
-4. JAIFLIX searches YouTube for the matching title and, for series, the selected season and episode. The viewer chooses a result and watches it in YouTube's official privacy-enhanced embedded player.
+3. VidAPI starts automatically. YouTube is offered only as a manual fallback when the viewer chooses to try another source.
+4. JAIFLIX searches using several title variants (including a broad title-only search for series), then checks each candidate's actual YouTube `status.embeddable` flag before showing it. It does not force a region code or require every season/episode keyword to match in one query. The viewer chooses a result and watches it in YouTube's official privacy-enhanced embedded player.
 
 Browsers do not let a website reliably inspect the HTTP status or internal error page of a cross-origin iframe. Therefore JAIFLIX does not claim to automatically detect VidAPI's internal 404; it provides a visible manual fallback switch whenever playback is unavailable.
 
-YouTube search results being embeddable does not prove that an upload is authorized, complete, or available in every country. Use official rights-holder channels or configure `YOUTUBE_ALLOWED_CHANNEL_IDS` to restrict search to channels you trust. Only embed content you are legally authorized to make available. JAIFLIX does not download or host YouTube video files.
+A video may be watchable on youtube.com but unavailable for embedding because its uploader disabled embedding; JAIFLIX cannot override that setting. YouTube search results being embeddable does not prove that an upload is authorized, complete, or available in every country. Use official rights-holder channels or configure `YOUTUBE_ALLOWED_CHANNEL_IDS` to restrict search to channels you trust. If this optional allowlist is configured, results from all other channels are intentionally hidden. Only embed content you are legally authorized to make available. JAIFLIX does not download or host YouTube video files.
 
 ## Local development
 
@@ -47,3 +47,7 @@ The `prebuild` script removes obsolete conflicting `[type]` route folders before
 ## Rights and attribution
 
 TMDB supplies metadata, not streaming rights. Keep the required TMDB attribution while using TMDB. VidAPI controls its own playback availability. YouTube embeds are subject to YouTube's terms, the uploader's permissions, and regional availability.
+
+## YouTube playback fallback
+
+VidAPI remains the default player. When a viewer chooses **Watch on YouTube**, the server-side `/api/youtube` route searches using both the English and Arabic TMDB titles, prioritizes the requested season/episode, verifies that the selected public video allows embedding, and returns a single best match. The player opens that episode directly with autoplay enabled; it does not show a separate search-results catalogue. Keep `YOUTUBE_API_KEY` configured as a server-only Vercel environment variable. The browser never receives the API key.
