@@ -1,2 +1,2 @@
 import Link from "next/link";import {localized} from "@/lib/i18n";import {Locale,Media} from "@/lib/types";
-export default function Card({m,lang}:{m:Media,lang:Locale}){return <Link className="card" href={`/title/${m.id}?lang=${lang}`}><img className="poster" src={m.poster} alt={localized(m,lang,"title")} loading="lazy"/><h3>{localized(m,lang,"title")}</h3><div className="meta">{m.year} · ★ {m.rating} · {m.runtime}</div></Link>}
+export default function Card({m,lang}:{m:Media,lang:Locale}){return <Link className="card" href={`/title/${m.type}/${m.tmdbId}?lang=${lang}`}><img className="poster" src={m.poster} alt={localized(m,lang,"title")} loading="lazy"/><h3>{localized(m,lang,"title")}</h3><div className="meta">{m.year||"—"} · ★ {m.rating} · {m.runtime}</div></Link>}

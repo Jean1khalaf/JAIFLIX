@@ -1,29 +1,32 @@
-# JAIFLIX
+# JAIFLIX with TMDB + VidAPI
 
-Deployable bilingual streaming-catalog MVP built with Next.js, Vercel and Neon.
+## Environment variables
+Copy `.env.example` to `.env.local`.
+- `TMDB_READ_ACCESS_TOKEN`: TMDB API Read Access Token, server-side only.
+- `TMDB_API_KEY`: optional alternative v3 key.
+- `NEXT_PUBLIC_VIDAPI_BASE=https://vaplayer.ru`
 
-## Run locally
-1. Install Node.js 20 or newer.
-2. Copy `.env.example` to `.env.local`.
-3. Run `npm install` then `npm run dev`.
-4. Open http://localhost:3000.
+## Local start
+```bash
+npm install
+npm run dev
+```
 
-The app uses built-in demo content when `DATABASE_URL` is absent or unavailable.
+## TMDB
+JAIFLIX retrieves trending titles, search results, posters, backdrops and details from TMDB API v3. The API credential stays server-side. The required TMDB attribution statement is rendered in the UI.
 
-## Neon
-1. Create a Neon project and copy its pooled PostgreSQL connection string.
-2. Run `db/schema.sql` in the Neon SQL Editor.
-3. Insert your licensed catalog rows into `media`.
-4. Set `DATABASE_URL` in Vercel.
+## VidAPI full player
+Movies use `https://vaplayer.ru/embed/movie/{TMDB_ID}`.
+Series episodes use `https://vaplayer.ru/embed/tv/{TMDB_ID}/{SEASON}/{EPISODE}`.
+JAIFLIX does not request TMDB trailers. If VidAPI displays a trailer, reports unavailable content, or blocks the frame, check:
+1. The TMDB ID is correct.
+2. The title/episode exists in VidAPI's catalog.
+3. Your localhost/deployed domain is registered in VidAPI Dashboard → Domains → Allowed Sites.
+4. Your browser/ad blocker is not blocking the player domain.
+5. Your VidAPI account/domain settings allow the selected playback mode.
 
-## Vercel
-Push this folder to GitHub, import it into Vercel, add environment variables, then deploy.
+## Deploy
+Push to GitHub, import into Vercel, and configure all environment variables in Vercel → Project → Settings → Environment Variables. Redeploy after adding them.
 
-## VidAPI
-The player base defaults to `https://vaplayer.ru`. Configure `NEXT_PUBLIC_VIDAPI_BASE` if your VidAPI dashboard gives you another verified domain. Movies use `/embed/movie/{TMDB_OR_IMDB_ID}`. Episodes use `/embed/tv/{TMDB_OR_IMDB_ID}/{season}/{episode}`. Subtitle preference is passed with `ds_lang=en` or `ds_lang=ar`.
-
-## Before production
-- Replace demo metadata and image URLs with records you are authorized to use.
-- Add authentication, age controls, privacy/terms/DMCA pages, monitoring and an admin workflow.
-- Verify VidAPI terms, domain configuration, advertising behavior and content rights.
-- Do not claim that JAIFLIX hosts streams. The app embeds an external provider.
+## Rights
+TMDB supplies metadata, not streaming rights. VidAPI controls playback availability. Publish or embed only content you are licensed or legally authorized to distribute.
