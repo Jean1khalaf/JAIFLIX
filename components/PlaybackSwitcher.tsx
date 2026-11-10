@@ -56,14 +56,14 @@ export default function PlaybackSwitcher({ vidApiSrc, title, titleAr, type, seas
     <section className="playbackBox" dir={ar ? "rtl" : "ltr"}>
       <div className="sourceBar">
         <button className={`sourceButton ${source === "vidapi" ? "selected" : ""}`} onClick={() => setSource("vidapi")} type="button">VidAPI · {ar ? "المصدر الأساسي" : "Primary"}</button>
-        <button className={`sourceButton ${source === "youtube" ? "selected" : ""}`} onClick={openYouTubeFallback} type="button">YouTube · {ar ? "مصدر احتياطي" : "Backup"}</button>
+        <button className={`sourceButton ${source === "youtube" ? "selected" : ""}`} onClick={() => { void openYouTubeFallback(); }} type="button">YouTube · {ar ? "مصدر احتياطي" : "Backup"}</button>
       </div>
 
       {source === "vidapi" ? (
         <>
           <iframe className="player" src={vidApiSrc} title={`${title} — VidAPI`} allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="origin" />
           <p className="playerHint">{ar ? "إذا ظهر خطأ 404 أو تعذّر تشغيل الفيديو، جرّب مصدر YouTube الاحتياطي." : "If VidAPI shows a 404 or the video cannot play, switch to the YouTube backup."}</p>
-          <button className="btn dark fallbackCta" type="button" onClick={openYouTubeFallback}>{ar ? "▶ جرّب YouTube بدلاً من ذلك" : "▶ Try YouTube instead"}</button>
+          <button className="btn dark fallbackCta" type="button" onClick={() => { void openYouTubeFallback(); }}>{ar ? "▶ جرّب YouTube بدلاً من ذلك" : "▶ Try YouTube instead"}</button>
         </>
       ) : (
         <>
