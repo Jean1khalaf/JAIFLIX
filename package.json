@@ -1,8 +1,30 @@
 {
-  "name":"jaiflix","version":"2.3.0","private":true,
-  "scripts":{"dev":"next dev","build":"next build","start":"next start","clean":"node -e \"const fs=require('fs');['.next','node_modules'].forEach(p=>fs.rmSync(p,{recursive:true,force:true}))\""},
-  "dependencies":{"next":"15.1.11","react":"19.0.0","react-dom":"19.0.0"},
-  "devDependencies":{"@types/node":"22.10.5","@types/react":"19.0.3","@types/react-dom":"19.0.2","typescript":"5.7.2"},
-  "overrides":{"react":"19.0.0","react-dom":"19.0.0"},
-  "engines":{"node":">=20.9.0"}
+  "name": "jaiflix",
+  "version": "2.3.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "clean": "node -e \"const fs=require('fs');['.next','node_modules'].forEach(p=>fs.rmSync(p,{recursive:true,force:true}))\"",
+    "prebuild": "node -e \"const fs=require('fs'); for (const p of ['app/title/[type]','app/watch/[type]']) fs.rmSync(p,{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "next": "15.1.11",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "@types/react": "19.0.3",
+    "@types/react-dom": "19.0.2",
+    "typescript": "5.7.2"
+  },
+  "overrides": {
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
 }
