@@ -1,32 +1,49 @@
-# JAIFLIX with TMDB + VidAPI
+# JAIFLIX — TMDB + VidAPI with YouTube playback fallback
+
+JAIFLIX keeps TMDB for catalogue metadata and VidAPI as the primary playback provider. YouTube Data API v3 is an optional, user-selected fallback when VidAPI cannot play a title (for example, a VidAPI 404).
 
 ## Environment variables
-Copy `.env.example` to `.env.local`.
-- `TMDB_READ_ACCESS_TOKEN`: TMDB API Read Access Token, server-side only.
-- `TMDB_API_KEY`: optional alternative v3 key.
-- `NEXT_PUBLIC_VIDAPI_BASE=https://vaplayer.ru`
 
-## Local start
+Copy `.env.example` to `.env.local` and configure:
+
+- `TMDB_READ_ACCESS_TOKEN`: TMDB API Read Access Token (server-side only).
+- `TMDB_API_KEY`: optional alternative TMDB v3 API key.
+- `NEXT_PUBLIC_VIDAPI_BASE`: VidAPI embed host (defaults to `https://vaplayer.ru`).
+- `YOUTUBE_API_KEY`: YouTube Data API v3 key (server-side only; required for YouTube fallback).
+- `YOUTUBE_ALLOWED_CHANNEL_IDS`: optional comma-separated list of trusted YouTube channel IDs. When configured, only search results from those channels are returned.
+
+Never commit `.env.local` or expose `YOUTUBE_API_KEY` through a `NEXT_PUBLIC_` variable. In Google Cloud Console, enable **YouTube Data API v3** and restrict the key to that API. Since requests are made server-side from Vercel, do not apply browser HTTP-referrer restrictions to this key; use suitable server-side/API restrictions supported by your Google Cloud setup.
+
+## Playback behavior
+
+1. TMDB continues to provide titles, posters, descriptions, seasons and episode metadata.
+2. VidAPI remains the default player and is loaded first.
+3. The watch page offers a **YouTube · Backup** control and a **Try YouTube instead** action. If VidAPI shows a 404, the viewer can switch to YouTube without leaving JAIFLIX.
+4. JAIFLIX searches YouTube for the matching title and, for series, the selected season and episode. The viewer chooses a result and watches it in YouTube's official privacy-enhanced embedded player.
+
+Browsers do not let a website reliably inspect the HTTP status or internal error page of a cross-origin iframe. Therefore JAIFLIX does not claim to automatically detect VidAPI's internal 404; it provides a visible manual fallback switch whenever playback is unavailable.
+
+YouTube search results being embeddable does not prove that an upload is authorized, complete, or available in every country. Use official rights-holder channels or configure `YOUTUBE_ALLOWED_CHANNEL_IDS` to restrict search to channels you trust. Only embed content you are legally authorized to make available. JAIFLIX does not download or host YouTube video files.
+
+## Local development
+
 ```bash
 npm install
 npm run dev
 ```
 
-## TMDB
-JAIFLIX retrieves trending titles, search results, posters, backdrops and details from TMDB API v3. The API credential stays server-side. The required TMDB attribution statement is rendered in the UI.
+## Deploy on Vercel
 
-## VidAPI full player
-Movies use `https://vaplayer.ru/embed/movie/{TMDB_ID}`.
-Series episodes use `https://vaplayer.ru/embed/tv/{TMDB_ID}/{SEASON}/{EPISODE}`.
-JAIFLIX does not request TMDB trailers. If VidAPI displays a trailer, reports unavailable content, or blocks the frame, check:
-1. The TMDB ID is correct.
-2. The title/episode exists in VidAPI's catalog.
-3. Your localhost/deployed domain is registered in VidAPI Dashboard → Domains → Allowed Sites.
-4. Your browser/ad blocker is not blocking the player domain.
-5. Your VidAPI account/domain settings allow the selected playback mode.
+Add the TMDB variables, `NEXT_PUBLIC_VIDAPI_BASE`, and `YOUTUBE_API_KEY` under Project → Settings → Environment Variables. Add `YOUTUBE_ALLOWED_CHANNEL_IDS` if you want to restrict results to selected official channels. Redeploy after changing environment variables.
 
-## Deploy
-Push to GitHub, import into Vercel, and configure all environment variables in Vercel → Project → Settings → Environment Variables. Redeploy after adding them.
+## Build
 
-## Rights
-TMDB supplies metadata, not streaming rights. VidAPI controls playback availability. Publish or embed only content you are licensed or legally authorized to distribute.
+```bash
+npm run build
+```
+
+The `prebuild` script removes obsolete conflicting `[type]` route folders before Next.js builds.
+
+## Rights and attribution
+
+TMDB supplies metadata, not streaming rights. Keep the required TMDB attribution while using TMDB. VidAPI controls its own playback availability. YouTube embeds are subject to YouTube's terms, the uploader's permissions, and regional availability.
