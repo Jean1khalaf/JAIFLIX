@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const apiKey = process.env.YOUTUBE_API_KEY?.trim();
 
   if (!apiKey) {
-    return NextResponse.json({ error: "YouTube fallback is not configured. Add YOUTUBE_API_KEY in your environment variables." }, { status: 503 });
+    return NextResponse.json({ error: "The alternative source is temporarily unavailable." }, { status: 503 });
   }
   if (!title && !titleAr) {
     return NextResponse.json({ error: "A title is required to search YouTube." }, { status: 400 });
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     maxResults: "10",
     order: "relevance",
     safeSearch: "moderate",
-    videoEmbeddable: "embeddable",
+    videoEmbeddable: "true",
     ...(lang === "ar" ? { relevanceLanguage: "ar", regionCode: "LB" } : { relevanceLanguage: "en" }),
     key: apiKey,
   }).toString();
@@ -51,8 +51,13 @@ export async function GET(request: NextRequest) {
     const response = await fetch(url, { next: { revalidate: 300 } });
     const data = await response.json() as { error?: { message?: string }; items?: YouTubeSearchItem[] };
     if (!response.ok) {
-      const message = data.error?.message || `YouTube search failed (${response.status}).`;
-      return NextResponse.json({ error: message }, { status: response.status === 403 ? 503 : response.status });
+      // Never return provider diagnostics to the browser. The API key remains
+      // server-side and provider errors are intentionally presented generically.
+      const status = response.status === 403 ? 503 : 502;
+      return NextResponse.json(
+        { error: "YouTube fallback is temporarily unavailable. Please try again later." },
+        { status },
+      );
     }
 
     const allowedChannels = (process.env.YOUTUBE_ALLOWED_CHANNEL_IDS || "")
@@ -73,7 +78,7 @@ export async function GET(request: NextRequest) {
       }];
     });
 
-    return NextResponse.json({ items, query, filteredByAllowedChannels: allowedChannels.length > 0 });
+    return NextResponse.json({ items, filteredByAllowedChannels: allowedChannels.length > 0 });
   } catch {
     return NextResponse.json({ error: "Could not contact YouTube. Please try again." }, { status: 502 });
   }
