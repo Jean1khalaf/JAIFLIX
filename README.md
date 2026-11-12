@@ -51,3 +51,15 @@ TMDB supplies metadata, not streaming rights. Keep the required TMDB attribution
 ## YouTube playback fallback
 
 VidAPI remains the default player. When a viewer chooses **Watch on YouTube**, the server-side `/api/youtube` route searches using both the English and Arabic TMDB titles, prioritizes the requested season/episode, verifies that the selected public video allows embedding, and returns a single best match. The player opens that episode directly with autoplay enabled; it does not show a separate search-results catalogue. Keep `YOUTUBE_API_KEY` configured as a server-only Vercel environment variable. The browser never receives the API key.
+
+
+## Navigation safety
+
+The JAIFLIX player embeds are sandboxed. The sandbox intentionally does not grant popups,
+top-level navigation, or top-navigation-by-user-activation permissions, which prevents an
+embedded provider from opening a new tab or navigating the main JAIFLIX page. The player
+can still display content inside its own frame; a site cannot reliably inspect or filter
+cross-origin content rendered inside a third-party player. For stronger content safety,
+use a playback provider you control or trust, and remove any provider that serves
+unauthorized or inappropriate material. Set `NEXT_PUBLIC_VIDAPI_BASE` only to a vetted
+provider hostname.

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Video = { videoId: string; title: string; channelTitle: string };
+type Episode = { number: number; title: string; overview: string; airDate: string };
 type Props = {
   vidApiSrc: string; vidApiBase: string; tmdbId: number; title: string; titleAr: string;
   type: "movie" | "series"; seasons: number; season: number; episode: number; lang: "en" | "ar";
@@ -19,12 +20,26 @@ export default function PlaybackSwitcher({
   const [activeEpisode, setActiveEpisode] = useState(initialEpisode);
   const [activeVidApiSrc, setActiveVidApiSrc] = useState(vidApiSrc);
   const [selected, setSelected] = useState<Video | null>(null);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [episodesLoading, setEpisodesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showFallbackPrompt, setShowFallbackPrompt] = useState(false);
   const ar = lang === "ar";
 
   useEffect(() => { setActiveSeason(initialSeason); setActiveEpisode(initialEpisode); }, [initialSeason, initialEpisode]);
+  useEffect(() => {
+    if (type !== "series") return;
+    let cancelled = false;
+    setEpisodesLoading(true);
+    fetch(`/api/tmdb/season?id=${tmdbId}&season=${activeSeason}&lang=${lang}`)
+      .then(async response => { if (!response.ok) throw new Error("Could not load episodes"); return response.json() as Promise<{episodes?: Episode[]}>; })
+      .then(data => { if (!cancelled) setEpisodes(data.episodes || []); })
+      .catch(() => { if (!cancelled) setEpisodes([]); })
+      .finally(() => { if (!cancelled) setEpisodesLoading(false); });
+    return () => { cancelled = true; };
+  }, [tmdbId, activeSeason, lang, type]);
+
   useEffect(() => {
     if (source !== "vidapi") { setShowFallbackPrompt(false); return; }
     const timer = window.setTimeout(() => setShowFallbackPrompt(true), 12000);
@@ -60,6 +75,26 @@ export default function PlaybackSwitcher({
     } finally { setLoading(false); }
   }
 
+  function chooseEpisode(number: number) {
+    setActiveEpisode(number);
+    const params = new URLSearchParams({ lang, type, season: String(activeSeason), episode: String(number) });
+    router.replace(`/watch/${tmdbId}?${params.toString()}`, { scroll: false });
+    const query = new URLSearchParams({primaryColor:"#e50914",ds_lang:lang,title,autoplay:"1"});
+    setActiveVidApiSrc(`${vidApiBase.replace(/\/$/, "")}/embed/tv/${tmdbId}/${activeSeason}/${number}?${query.toString()}`);
+    setError(""); setSelected(null);
+    if (source === "youtube") void loadYouTube(activeSeason, number);
+  }
+
+  function chooseEpisodeForSeason(number: number) {
+    setActiveSeason(number); setActiveEpisode(1);
+    const params = new URLSearchParams({ lang, type, season: String(number), episode: "1" });
+    router.replace(`/watch/${tmdbId}?${params.toString()}`, { scroll: false });
+    const query = new URLSearchParams({primaryColor:"#e50914",ds_lang:lang,title,autoplay:"1"});
+    setActiveVidApiSrc(`${vidApiBase.replace(/\/$/, "")}/embed/tv/${tmdbId}/${number}/1?${query.toString()}`);
+    setError(""); setSelected(null);
+    if (source === "youtube") void loadYouTube(number, 1);
+  }
+
   function updateEpisode() {
     const nextSeason = Math.max(1, activeSeason), nextEpisode = Math.max(1, activeEpisode);
     const params = new URLSearchParams({ lang, type, season: String(nextSeason), episode: String(nextEpisode) });
@@ -71,25 +106,40 @@ export default function PlaybackSwitcher({
   function switchToVidApi() { setSource("vidapi"); setSelected(null); setError(""); setActiveVidApiSrc(playerUrl); }
 
   return <section className="playbackBox" dir={ar ? "rtl" : "ltr"}>
-    {type === "series" && <div className="watchControls">
-      <label>{ar ? "الموسم" : "Season"}<select value={activeSeason} onChange={event => { setActiveSeason(Number(event.target.value)); setActiveEpisode(1); }}>
-        {Array.from({ length: Math.max(1, seasons) }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}
-      </select></label>
-      <label>{ar ? "الحلقة" : "Episode"}<input type="number" min={1} value={activeEpisode} onChange={event => setActiveEpisode(Math.max(1, Number(event.target.value) || 1))} onKeyDown={event => { if (event.key === "Enter") updateEpisode(); }} /></label>
-      <button className="btn red playEpisodeButton" type="button" onClick={updateEpisode}>{ar ? "▶ تشغيل الحلقة" : "▶ Play episode"}</button>
+    {type === "series" && <div className="episodeNavigation">
+      <div className="episodeNavHeading">{ar ? "المواسم" : "Seasons"}</div>
+      <div className="episodeStrip seasonStrip" role="group" aria-label={ar ? "اختيار الموسم" : "Choose season"}>
+        {Array.from({ length: Math.max(1, seasons) }, (_, index) => index + 1).map(number =>
+          <button key={number} type="button" className={`episodeChip ${activeSeason === number ? "active" : ""}`}
+            aria-pressed={activeSeason === number}
+            onClick={() => chooseEpisodeForSeason(number)}>
+            {ar ? `الموسم ${number}` : `Season ${number}`}
+          </button>)}
+      </div>
+      <div className="episodeNavHeading">{ar ? "الحلقات" : "Episodes"}</div>
+      <div className="episodeStrip" role="group" aria-label={ar ? "اختيار الحلقة" : "Choose episode"}>
+        {episodesLoading && <span className="episodeLoading">{ar ? "جارٍ تحميل الحلقات…" : "Loading episodes…"}</span>}
+        {!episodesLoading && episodes.map(item =>
+          <button key={item.number} type="button" className={`episodeChip ${activeEpisode === item.number ? "active" : ""}`}
+            aria-pressed={activeEpisode === item.number} title={item.title}
+            onClick={() => chooseEpisode(item.number)}>
+            {ar ? `الحلقة ${item.number}` : `Episode ${item.number}`}
+          </button>)}
+        {!episodesLoading && episodes.length === 0 && <span className="episodeLoading">{ar ? "قائمة الحلقات غير متاحة" : "Episode list unavailable"}</span>}
+      </div>
     </div>}
 
     <div className="watchSourceStatus"><span className={`sourceBadge ${source === "vidapi" ? "active" : ""}`}>VidAPI · {ar ? "أساسي" : "Primary"}</span>{source === "youtube" && <span className="sourceBadge active youtubeBadge">YouTube · {ar ? "احتياطي" : "Backup"}</span>}</div>
 
     {source === "vidapi" ? <>
-      <iframe key={activeVidApiSrc} className="player" src={activeVidApiSrc} title={`${title} — VidAPI`} allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="origin" />
+      <iframe key={activeVidApiSrc} className="player" src={activeVidApiSrc} title={`${title} — VidAPI`} sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
       <p className="playerHint">{ar ? "يعمل المشغل الأساسي. إذا لم يبدأ الفيديو، يمكنك تجربة YouTube." : "The primary player is active. If playback fails, you can try YouTube."}</p>
       {showFallbackPrompt && <div className="notice fallbackPrompt" role="status">{ar ? "هل تواجه مشكلة في التشغيل؟ جرّب المصدر الاحتياطي." : "Having trouble playing? Try the backup source."}</div>}
       <button className="btn dark fallbackCta" type="button" onClick={() => void loadYouTube()}>{ar ? "▶ شاهد عبر YouTube" : "▶ Watch on YouTube"}</button>
     </> : <>
       <div className="youtubeToolbar"><div><strong>{ar ? "تشغيل عبر YouTube" : "Playing via YouTube"}</strong><p>{ar ? "يمكنك تغيير الموسم أو الحلقة أعلاه دون مغادرة المشغل." : "Change the season or episode above without leaving the player."}</p></div><button className="btn dark" type="button" onClick={switchToVidApi}>{ar ? "العودة إلى VidAPI" : "Back to VidAPI"}</button></div>
       {loading && <div className="youtubePanel"><p className="playerHint">{ar ? "جارٍ العثور على الحلقة…" : "Finding your selected episode…"}</p></div>}
-      {selected && <><div className="playerNowPlaying"><strong>{selected.title}</strong><span>{selected.channelTitle}</span></div><iframe key={selected.videoId} className="player" src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(selected.videoId)}?autoplay=1&rel=0`} title={`${title} — YouTube`} allow="autoplay; encrypted-media; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /></>}
+      {selected && <><div className="playerNowPlaying"><strong>{selected.title}</strong><span>{selected.channelTitle}</span></div><iframe key={selected.videoId} className="player" src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(selected.videoId)}?autoplay=1&rel=0`} title={`${title} — YouTube`} sandbox="allow-scripts allow-same-origin allow-presentation" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /></>}
       {error && <div className="youtubePanel"><div className="notice" role="status">{error}</div><button className="btn dark" type="button" onClick={() => void loadYouTube()}>{ar ? "حاول مرة أخرى" : "Try again"}</button></div>}
       {!loading && !selected && !error && <div className="youtubePanel"><p className="playerHint">{ar ? "اختر الحلقة ثم اضغط تشغيل الحلقة." : "Choose a season and episode, then press Play episode."}</p></div>}
     </>}
