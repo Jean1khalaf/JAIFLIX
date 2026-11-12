@@ -23,6 +23,7 @@ export default function Header({ lang }: { lang: Locale }) {
         <Link onClick={() => setMenuOpen(false)} href={`/browse?lang=${lang}&type=movie`}>{t.movies}</Link>
         <Link onClick={() => setMenuOpen(false)} href={`/browse?lang=${lang}&type=series`}>{t.series}</Link>
       </nav>
+      <Link className="downloadNav" href="/download">↓ Download App</Link>
       <form className="headerSearch" onSubmit={search}><input aria-label={t.search} name="q" className="search" placeholder={t.search+"..."}/></form>
       <Link className="lang" href={`${p}?lang=${swap}`}>{t.language}</Link>
       <button className="mobileMenuButton" type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}>{menuOpen ? "✕" : "☰"}</button>

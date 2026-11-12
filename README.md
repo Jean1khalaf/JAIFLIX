@@ -63,3 +63,7 @@ cross-origin content rendered inside a third-party player. For stronger content 
 use a playback provider you control or trust, and remove any provider that serves
 unauthorized or inappropriate material. Set `NEXT_PUBLIC_VIDAPI_BASE` only to a vetted
 provider hostname.
+
+## Android and Google TV apps
+
+The `android/` directory contains separate mobile and TV Android app flavors. Both load the deployed JAIFLIX website, so the catalogue and playback routes remain shared. See [`android/README.md`](android/README.md) for build, sideload and release instructions. The website's **Download App** navigation link opens `/download`; add tested APKs to `public/downloads/JAIFLIX-mobile.apk` and `public/downloads/JAIFLIX-tv.apk` before deployment to activate the download links.

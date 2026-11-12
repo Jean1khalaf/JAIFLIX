@@ -23,3 +23,21 @@
 .episodeChip.active{background:#e50914;border-color:#e50914;color:#fff}
 .episodeLoading{color:#888;font-size:13px;padding:12px 2px}
 @media(max-width:650px){.episodeStrip{gap:7px}.episodeChip{min-height:40px;padding:0 13px;font-size:12px}}
+
+/* JAIFLIX direct Android / TV app download page */
+.downloadNav{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border:1px solid #e5091455;border-radius:999px;color:#fff!important;background:#e5091418;font-weight:800}
+.downloadNav:hover{background:#e50914}
+.downloadPage{min-height:100vh;padding-top:28px;padding-bottom:70px}
+.downloadBack{color:#aaa;font-size:14px}
+.downloadHero{text-align:center;max-width:680px;margin:58px auto 38px}
+.downloadHero img{object-fit:cover;border-radius:18px;box-shadow:0 12px 40px #e5091425}
+.downloadHero .eyebrow{margin:22px 0 8px}
+.downloadHero h1{font-size:clamp(32px,6vw,54px);margin:0 0 12px}
+.downloadHero>p:last-child{color:#aaa;line-height:1.7}
+.downloadChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:850px;margin:auto}
+.downloadCard{padding:26px;border:1px solid #ffffff1c;border-radius:20px;background:linear-gradient(145deg,#17191e,#0e0f12);display:flex;flex-direction:column;align-items:flex-start;min-height:260px}
+.downloadIcon{font-size:34px;color:#f33}.downloadCard h2{margin:10px 0}.downloadCard p{color:#aaa;line-height:1.6;flex:1}.downloadCard .btn{margin:8px 0 12px}.downloadCard small{color:#777;line-height:1.5}.downloadPending{display:inline-flex;border:1px solid #e5091455;border-radius:99px;padding:11px 16px;color:#ff9b9f;font-weight:750;margin:8px 0 12px}
+.downloadInstructions{max-width:850px;margin:34px auto 0;padding:24px;border:1px solid #ffffff18;border-radius:18px;background:#ffffff06}.downloadInstructions h2{margin-top:0}.downloadInstructions li{color:#bbb;line-height:1.9;padding-inline-start:5px}.downloadSafety{margin-top:18px;padding:14px;border-radius:12px;background:#e5091410;border:1px solid #e5091435;color:#ffb4b7;font-size:13px;line-height:1.6}.downloadFoot{text-align:center;color:#777;font-size:13px;margin-top:26px}
+@media(max-width:650px){.downloadChoices{grid-template-columns:1fr}.downloadHero{margin:42px auto 28px}.downloadCard{min-height:220px}.downloadNav{padding:7px 10px;font-size:12px}}
+/* Keyboard / Android TV remote focus visibility */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ff343d;outline-offset:4px}
