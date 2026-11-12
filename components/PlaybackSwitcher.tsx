@@ -132,7 +132,7 @@ export default function PlaybackSwitcher({
     <div className="watchSourceStatus"><span className={`sourceBadge ${source === "vidapi" ? "active" : ""}`}>VidAPI · {ar ? "أساسي" : "Primary"}</span>{source === "youtube" && <span className="sourceBadge active youtubeBadge">YouTube · {ar ? "احتياطي" : "Backup"}</span>}</div>
 
     {source === "vidapi" ? <>
-      <iframe key={activeVidApiSrc} className="player" src={activeVidApiSrc} title={`${title} — VidAPI`} sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
+      <iframe key={activeVidApiSrc} className="player" src={activeVidApiSrc} title={`${title} — VidAPI`} allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
       <p className="playerHint">{ar ? "يعمل المشغل الأساسي. إذا لم يبدأ الفيديو، يمكنك تجربة YouTube." : "The primary player is active. If playback fails, you can try YouTube."}</p>
       {showFallbackPrompt && <div className="notice fallbackPrompt" role="status">{ar ? "هل تواجه مشكلة في التشغيل؟ جرّب المصدر الاحتياطي." : "Having trouble playing? Try the backup source."}</div>}
       <button className="btn dark fallbackCta" type="button" onClick={() => void loadYouTube()}>{ar ? "▶ شاهد عبر YouTube" : "▶ Watch on YouTube"}</button>
