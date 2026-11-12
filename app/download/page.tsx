@@ -10,14 +10,15 @@ export default function DownloadPage() {
       <p>Install JAIFLIX on your Android phone or Chromebook and open it in its own app window. No APK download is required.</p>
     </div>
     <section className="downloadInstructions">
-      <h2>One-tap installation</h2>
+      <h2>Install in one tap</h2>
+      <p>Use the red <strong>＋ Install JAIFLIX</strong> button at the bottom-right of this page. On a supported device, it opens Chrome's installation confirmation.</p>
       <ol>
         <li>Open <strong>jaiflix.vercel.app</strong> in Chrome on your Android phone or Chromebook.</li>
-        <li>Tap the red <strong>Install JAIFLIX</strong> button when it appears. Chrome will open its installation confirmation.</li>
-        <li>Confirm once. JAIFLIX will be added to your device's app launcher or home screen.</li>
+        <li>Tap <strong>＋ Install JAIFLIX</strong>.</li>
+        <li>Confirm the installation. JAIFLIX will appear on your home screen or app launcher.</li>
       </ol>
-      <p className="downloadSafety">The one-tap install option is intended for Android phones and Chromebooks; JAIFLIX does not show its install button on Google TV or Android TV. Browser-level installation menus are controlled by the device and cannot be disabled by a website. If the button is unavailable on a supported device, use Chrome's menu and select Install app. Video playback still requires an internet connection.</p>
+      <p className="downloadSafety">If the button says Chrome has not offered the prompt, open Chrome's ⋮ menu and select “Install app” or “Add to Home screen”. The website cannot bypass Chrome's confirmation. Google TV and Android TV are not supported by this install flow. Video playback still requires an internet connection.</p>
     </section>
-    <p className="downloadFoot">The install button appears only when Chrome says JAIFLIX is installable. Chrome always requires your confirmation before installing.</p>
+    <p className="downloadFoot">The install button is hidden on Google TV and Android TV. On desktop previews it remains visible, but installation is intended for Android phones and Chromebooks.</p>
   </main>;
 }
