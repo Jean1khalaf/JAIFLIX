@@ -64,6 +64,6 @@ use a playback provider you control or trust, and remove any provider that serve
 unauthorized or inappropriate material. Set `NEXT_PUBLIC_VIDAPI_BASE` only to a vetted
 provider hostname.
 
-## Android and Google TV apps
+## Android PWA
 
-The `android/` directory contains separate mobile and TV Android app flavors. Both load the deployed JAIFLIX website, so the catalogue and playback routes remain shared. See [`android/README.md`](android/README.md) for build, sideload and release instructions. The website's **Download App** navigation link opens `/download`; add tested APKs to `public/downloads/JAIFLIX-mobile.apk` and `public/downloads/JAIFLIX-tv.apk` before deployment to activate the download links.
+JAIFLIX is installable as a Progressive Web App on Android phones. Open the deployed site in Chrome and choose **Install app** or **Add to Home screen**. It opens in a standalone app window. The web app includes a manifest, Android-sized icons and a service worker for the app shell. Android TV and Google TV support has been removed. An optional Android phone WebView wrapper remains in `android/` for testing; see [`android/README.md`](android/README.md).

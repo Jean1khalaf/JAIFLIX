@@ -13,12 +13,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
-    }
-
-    flavorDimensions += "device"
-    productFlavors {
-        create("mobile") { dimension = "device"; resValue("string", "app_name", "JAIFLIX") }
-        create("tv") { dimension = "device"; resValue("string", "app_name", "JAIFLIX TV") }
+        resValue("string", "app_name", "JAIFLIX")
     }
 
     buildTypes {
