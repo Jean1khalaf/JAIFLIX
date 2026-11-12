@@ -1,4 +1,4 @@
-const CACHE_NAME = "jaiflix-shell-v1";
+const CACHE_NAME = "jaiflix-shell-v2";
 const APP_SHELL = ["/", "/jaiflix-icon.png", "/icons/jaiflix-192.png", "/icons/jaiflix-512.png"];
 
 self.addEventListener("install", (event) => {

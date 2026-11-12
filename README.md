@@ -66,4 +66,4 @@ provider hostname.
 
 ## Android PWA
 
-JAIFLIX is installable as a Progressive Web App on Android phones. Open the deployed site in Chrome and choose **Install app** or **Add to Home screen**. It opens in a standalone app window. The web app includes a manifest, Android-sized icons and a service worker for the app shell. Android TV and Google TV support has been removed. An optional Android phone WebView wrapper remains in `android/` for testing; see [`android/README.md`](android/README.md).
+JAIFLIX is installable as a Progressive Web App on Android phones and Chromebooks using Chrome. When Chrome exposes its install prompt, the site displays a one-tap **Install JAIFLIX** button; the user still confirms installation in Chrome. The app opens in a standalone window. The web app includes a manifest, app icons and a service worker for the app shell. The custom install button is not shown on Google TV or Android TV. An optional Android phone WebView wrapper remains in `android/` for testing; see [`android/README.md`](android/README.md).

@@ -1,6 +1,6 @@
 # JAIFLIX Android phone app
 
-The recommended installation is the website's Progressive Web App (PWA): open `https://jaiflix.vercel.app/` in Chrome on an Android phone, open the browser menu, and choose **Install app** or **Add to Home screen**. The PWA opens in a standalone app window and does not require an APK.
+The recommended installation is the website's Progressive Web App (PWA): open `https://jaiflix.vercel.app/` in Chrome on an Android phone or Chromebook, then tap the **Install JAIFLIX** button when it appears. Chrome asks the user to confirm installation. If the button is unavailable, use Chrome’s menu and choose **Install app**. The PWA opens in a standalone app window and does not require an APK.
 
 This project retains an optional Android phone WebView wrapper for testing. Android TV and Google TV support has been removed.
 

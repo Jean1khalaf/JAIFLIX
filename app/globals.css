@@ -43,4 +43,4 @@
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ff343d;outline-offset:4px}
 
 /* Android PWA install action */
-.pwaInstallButton{position:fixed;right:18px;bottom:18px;z-index:120;border:0;border-radius:999px;padding:13px 19px;background:#e50914;color:#fff;font-weight:850;box-shadow:0 8px 28px #0009;cursor:pointer}.pwaInstallButton:hover{background:#c9000b}
+.pwaInstallButton{position:fixed;right:18px;bottom:18px;z-index:120;border:0;border-radius:999px;padding:13px 19px;background:#e50914;color:#fff;font-weight:850;box-shadow:0 8px 28px #0009;cursor:pointer}.pwaInstallButton:hover{background:#c9000b}.pwaInstallButton:disabled{opacity:.75;cursor:wait}
