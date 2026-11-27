@@ -51,3 +51,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .pwaInstallButton:hover{background:#c9000b}
 .pwaInstallButton:disabled{opacity:.75;cursor:wait}
 .pwaInstallMessage{margin:0;padding:12px 14px;border:1px solid #e5091455;border-radius:12px;background:#171012;color:#ffd9da;font-size:13px;line-height:1.5;box-shadow:0 8px 28px #0009}
+
+
+/* Android TV APK download action */
+.downloadApkButton{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:999px;background:#e50914;color:#fff;font-weight:850;text-decoration:none;box-shadow:0 8px 24px #0008}.downloadApkButton:hover{background:#c9000b}.downloadApkButton:focus-visible{outline:3px solid #fff;outline-offset:4px}
