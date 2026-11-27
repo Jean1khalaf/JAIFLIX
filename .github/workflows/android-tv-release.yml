@@ -2,7 +2,16 @@ name: Android universal APK
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "android/**"
+      - ".github/workflows/android-tv-release.yml"
   push:
+    branches: [fix/android-tv-release-pipeline]
+    paths:
+      - "android/**"
+      - ".github/workflows/android-tv-release.yml"
     tags:
       - "v*"
 
@@ -56,24 +65,37 @@ jobs:
             if [[ -z "${!name}" ]]; then echo "Missing required Actions secret: $name"; exit 1; fi
           done
 
-      - name: Build universal release APK
+      - name: Build debug and release APKs
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle --no-daemon :app:assembleRelease
+        run: gradle --no-daemon :app:assembleDebug :app:assembleRelease
         working-directory: android
 
-      - name: Prepare APK artifact
+      - name: Prepare APK artifacts
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release.apk dist/JAIFLIX-universal.apk
+          if [[ -f android/app/build/outputs/apk/release/app-release.apk ]]; then
+            cp android/app/build/outputs/apk/release/app-release.apk dist/JAIFLIX-universal.apk
+          elif [[ -f android/app/build/outputs/apk/release/app-release-unsigned.apk ]]; then
+            cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/JAIFLIX-universal-unsigned.apk
+          else
+            echo "No release APK was produced"; exit 1
+          fi
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/JAIFLIX-debug.apk
 
-      - name: Upload APK artifact
+      - name: Verify signed release APK on tagged builds
+        if: startsWith(github.ref, 'refs/tags/')
+        run: apksigner verify --verbose dist/JAIFLIX-universal.apk
+
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: JAIFLIX-universal-APK
-          path: dist/JAIFLIX-universal.apk
+          name: JAIFLIX-Android-TV-APKs
+          path: dist/*.apk
           if-no-files-found: error
           retention-days: 30
 
