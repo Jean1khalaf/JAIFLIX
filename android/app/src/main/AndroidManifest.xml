@@ -3,6 +3,7 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application
+        android:banner="@drawable/jaiflix_banner"
         android:allowBackup="false"
         android:usesCleartextTraffic="false"
         android:icon="@drawable/jaiflix_icon"
@@ -11,6 +12,7 @@
         android:supportsRtl="true">
         <activity
             android:name=".MainActivity"
+            android:banner="@drawable/jaiflix_banner"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
             android:exported="true"
             android:screenOrientation="unspecified">
