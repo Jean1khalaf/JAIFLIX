@@ -64,6 +64,8 @@ use a playback provider you control or trust, and remove any provider that serve
 unauthorized or inappropriate material. Set `NEXT_PUBLIC_VIDAPI_BASE` only to a vetted
 provider hostname.
 
-## Android PWA
+## Android app and Android TV
 
-JAIFLIX is installable as a Progressive Web App on Android phones and Chromebooks using Chrome. When Chrome exposes its install prompt, the site displays a one-tap **Install JAIFLIX** button; the user still confirms installation in Chrome. The app opens in a standalone window. The web app includes a manifest, app icons and a service worker for the app shell. The custom install button is not shown on Google TV or Android TV. An optional Android phone WebView wrapper remains in `android/` for testing; see [`android/README.md`](android/README.md).
+The Android project builds one universal APK for compatible Android phones, Android TV and Google TV devices. The main manifest contains both standard Android and Leanback launcher entries, with touchscreen and Leanback marked optional. The website remains installable as a PWA on phones and Chromebooks through Chrome. Android TV users should use the APK download on `/download`; Android always requires the user to confirm installation. See [`android/README.md`](android/README.md) for build and signing instructions.
+
+A GitHub Actions workflow builds the APK and publishes it to GitHub Releases when a `v*` tag is pushed. The download page links to the latest release asset. Configure the signing secrets described in the Android README before publishing a release.

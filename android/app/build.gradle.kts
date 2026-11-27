@@ -16,20 +16,21 @@ android {
         resValue("string", "app_name", "JAIFLIX")
     }
 
-    // Build separate phone and Android TV variants from the same WebView app.
-    flavorDimensions += "device"
-    productFlavors {
-        create("phone") { dimension = "device" }
-        create("tv") {
-            dimension = "device"
-            applicationIdSuffix = ".tv"
-            versionNameSuffix = "-tv"
-        }
-    }
-
+    // One APK with both the standard Android and Android TV launcher categories.
     buildTypes {
         debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
-        release { isMinifyEnabled = false }
+        release {
+            isMinifyEnabled = false
+            val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+            if (!keystorePath.isNullOrBlank()) {
+                signingConfig = signingConfigs.create("release") {
+                    storeFile = file(keystorePath)
+                    storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                    keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                    keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                }
+            }
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
