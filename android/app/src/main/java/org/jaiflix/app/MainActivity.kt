@@ -39,7 +39,7 @@ class MainActivity : Activity() {
             javaScriptCanOpenWindowsAutomatically = false
             setSupportMultipleWindows(false)
             loadsImagesAutomatically = true
-            userAgentString = "$userAgentString JAIFLIXAndroid-${BuildConfig.FLAVOR}"
+            userAgentString = "$userAgentString JAIFLIXAndroid-${BuildConfig.BUILD_TYPE}"
         }
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
