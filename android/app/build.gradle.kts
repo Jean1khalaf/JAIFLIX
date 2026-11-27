@@ -7,6 +7,10 @@ android {
     namespace = "org.jaiflix.app"
     compileSdk = 35
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "org.jaiflix.app"
         minSdk = 23
