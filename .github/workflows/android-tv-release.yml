@@ -48,9 +48,22 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
+          set -euo pipefail
+
           if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/jaiflix-release.jks"
-            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/jaiflix-release.jks" >> "$GITHUB_ENV"
+            KEYSTORE_PATH="$RUNNER_TEMP/jaiflix-release.jks"
+
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+
+            if [[ ! -s "$KEYSTORE_PATH" ]]; then
+              echo "ERROR: Decoded Android keystore is empty."
+              exit 1
+            fi
+
+            echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+            echo "Android signing keystore configured."
+          else
+            echo "No Android signing keystore configured; release APK will be unsigned."
           fi
 
       - name: Require signing key for tagged releases
@@ -62,8 +75,12 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
-            if [[ -z "${!name}" ]]; then echo "Missing required Actions secret: $name"; exit 1; fi
+            if [[ -z "${!name}" ]]; then
+              echo "Missing required Actions secret: $name"
+              exit 1
+            fi
           done
 
       - name: Build debug and release APKs
