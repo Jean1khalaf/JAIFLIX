@@ -1,15 +1,27 @@
-# JAIFLIX Android phone app
+# JAIFLIX Android builds
 
-The recommended installation is the website's Progressive Web App (PWA): open `https://jaiflix.vercel.app/` in Chrome on an Android phone or Chromebook, then tap the **Install JAIFLIX** button when it appears. Chrome asks the user to confirm installation. If the button is unavailable, use Chrome’s menu and choose **Install app**. The PWA opens in a standalone app window and does not require an APK.
+This project provides separate phone and Android TV WebView variants. Both load `https://jaiflix.vercel.app/` and require an internet connection for video playback.
 
-This project retains an optional Android phone WebView wrapper for testing. Android TV and Google TV support has been removed.
+## Android TV APK
 
-## Build the optional phone APK
+The `tv` product flavor adds the Android TV / Leanback launcher category, marks touchscreen as optional, supplies a TV launcher banner, and keeps the app navigable with a D-pad/OK/Back remote through the WebView activity.
 
-Requirements: JDK 17, Android SDK Platform 35 and Gradle 8.9.
+Build a debug APK with JDK 17, Android SDK Platform 35, and Gradle 8.9:
 
 ```bash
-gradle assembleDebug
+cd android
+gradle assembleTvDebug
 ```
 
-Output: `app/build/outputs/apk/debug/app-debug.apk`. Debug APKs are for testing/sideloading, not a signed public release.
+Output: `app/build/outputs/apk/tv/debug/app-tv-debug.apk`.
+
+Install the APK by sideloading it from a USB drive or through ADB. The TV must run Android TV / Google TV (or a compatible Android build that supports APK sideloading and WebView). A TV marketed as “Smart TV” may instead use a proprietary operating system; confirm its OS and model before attempting installation.
+
+## Android phone APK
+
+```bash
+cd android
+gradle assemblePhoneDebug
+```
+
+Debug APKs are for testing/sideloading, not signed public releases. Use a properly signed release build for distribution.

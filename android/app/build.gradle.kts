@@ -16,6 +16,17 @@ android {
         resValue("string", "app_name", "JAIFLIX")
     }
 
+    // Build separate phone and Android TV variants from the same WebView app.
+    flavorDimensions += "device"
+    productFlavors {
+        create("phone") { dimension = "device" }
+        create("tv") {
+            dimension = "device"
+            applicationIdSuffix = ".tv"
+            versionNameSuffix = "-tv"
+        }
+    }
+
     buildTypes {
         debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
         release { isMinifyEnabled = false }
