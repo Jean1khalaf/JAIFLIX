@@ -90,7 +90,7 @@ jobs:
 
       - name: Verify signed release APK on tagged builds
         if: startsWith(github.ref, 'refs/tags/')
-        run: "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/JAIFLIX-universal.apk
+        run: '"$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/JAIFLIX-universal.apk'
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
